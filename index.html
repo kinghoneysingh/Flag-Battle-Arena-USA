@@ -3,39 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Flag War Arena</title>
+  <title>Flags War Arena</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
-      background: radial-gradient(circle, #101528 0%, #05070e 100%);
+      background: radial-gradient(circle, #0b1026 0%, #020308 100%);
       overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Arial Black', Arial, sans-serif;
       text-align: center;
       color: #fff;
       user-select: none;
     }
     #ui-container {
       position: absolute;
-      top: 20px;
+      top: 15px;
       width: 100%;
       pointer-events: none;
       z-index: 10;
     }
-    h1 {
+    h2 {
       margin: 0;
-      font-size: 24px;
-      color: #ffd700;
-      text-shadow: 0 0 15px rgba(255,215,0,0.8);
+      font-size: 20px;
+      color: #ffeb3b;
+      text-shadow: 0 0 10px rgba(255,235,59,0.8);
+    }
+    h1 {
+      margin: 4px 0;
+      font-size: 26px;
+      color: #00e676;
+      text-shadow: 0 0 15px rgba(0,230,118,0.8);
       letter-spacing: 1px;
     }
-    p {
-      margin: 6px 0;
+    #counter-box {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #00e676;
+      padding: 8px 20px;
+      border-radius: 30px;
       font-size: 14px;
-      color: #00ffcc;
-      font-weight: bold;
+      color: #fff;
+      z-index: 10;
     }
     #winner-banner {
       display: none;
@@ -43,31 +56,28 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(10, 10, 25, 0.95);
-      border: 3px solid #ffd700;
-      box-shadow: 0 0 25px rgba(255,215,0,0.6);
-      padding: 20px 35px;
+      background: rgba(10, 15, 30, 0.95);
+      border: 3px solid #ffeb3b;
+      box-shadow: 0 0 30px rgba(255,235,59,0.8);
+      padding: 25px 40px;
       border-radius: 16px;
       font-size: 26px;
       font-weight: 900;
-      color: #ffd700;
+      color: #ffeb3b;
       z-index: 30;
-      animation: pop 0.4s ease;
     }
-    @keyframes pop {
-      0% { transform: translate(-50%, -50%) scale(0.6); }
-      100% { transform: translate(-50%, -50%) scale(1); }
-    }
-    canvas {
-      display: block;
-    }
+    canvas { display: block; }
   </style>
 </head>
 <body>
 
   <div id="ui-container">
-    <h1>⚔️ FLAG WAR ARENA ⚔️</h1>
-    <p>💬 Type your country name in chat to win!</p>
+    <h2>WHERE ARE YOU FROM?</h2>
+    <h1>FLAGS WAR ARENA</h1>
+  </div>
+
+  <div id="counter-box">
+    🛡️ <span id="eliminated-count">0</span> / 64 ELIMINATED
   </div>
 
   <div id="winner-banner">
@@ -93,83 +103,83 @@
     Runner.run(runner, engine);
 
     const centerX = width / 2;
-    const centerY = height / 2 + 20;
-    const arenaRadius = Math.min(width, height) * 0.43;
+    const centerY = height / 2 + 10;
+    const arenaRadius = Math.min(width, height) * 0.44;
 
-    // Outer Circle with an exit gap on left
-    const wallSegments = 48;
+    // Big Circular Arena with side hole
+    const wallSegments = 56;
     for (let i = 0; i < wallSegments; i++) {
-      if (i >= 22 && i <= 26) continue; // Elimination Exit Hole
+      if (i >= 24 && i <= 29) continue; // Exit Gap
       const angle = (i / wallSegments) * Math.PI * 2;
       const x = centerX + Math.cos(angle) * arenaRadius;
       const y = centerY + Math.sin(angle) * arenaRadius;
       const wall = Bodies.rectangle(x, y, 22, 28, {
         isStatic: true,
         angle: angle + Math.PI / 2,
-        render: { fillStyle: '#3d4b8f' }
+        render: { fillStyle: '#3f51b5' }
       });
       Composite.add(world, wall);
     }
 
-    // Rotating Blades / Spinners
-    const spinner1 = Bodies.rectangle(centerX, centerY - 60, arenaRadius * 0.7, 14, {
+    // Rotating Inner Blades (Like video)
+    const spinner1 = Bodies.rectangle(centerX, centerY, arenaRadius * 0.8, 14, {
       isStatic: true,
-      render: { fillStyle: '#ff2d55' }
+      render: { fillStyle: '#e91e63' }
     });
-    const spinner2 = Bodies.rectangle(centerX, centerY + 50, arenaRadius * 0.55, 14, {
+    const spinner2 = Bodies.rectangle(centerX, centerY, arenaRadius * 0.5, 14, {
       isStatic: true,
-      render: { fillStyle: '#00d2d3' }
+      render: { fillStyle: '#00bcd4' }
     });
     Composite.add(world, [spinner1, spinner2]);
 
     Events.on(engine, 'beforeUpdate', () => {
-      Body.setAngle(spinner1, spinner1.angle + 0.045);
-      Body.setAngle(spinner2, spinner2.angle - 0.055);
+      Body.setAngle(spinner1, spinner1.angle + 0.035);
+      Body.setAngle(spinner2, spinner2.angle - 0.045);
     });
 
-    // Country flags list with official CDN flag icons
-    const countries = [
-      { name: "INDIA", code: "in" },
-      { name: "USA", code: "us" },
-      { name: "BRAZIL", code: "br" },
-      { name: "GERMANY", code: "de" },
-      { name: "FRANCE", code: "fr" },
-      { name: "ARGENTINA", code: "ar" },
-      { name: "JAPAN", code: "jp" },
-      { name: "TURKEY", code: "tr" },
-      { name: "UK", code: "gb" },
-      { name: "PORTUGAL", code: "pt" },
-      { name: "INDONESIA", code: "id" },
-      { name: "CANADA", code: "ca" }
+    // 64 Countries List with Flags & Colors
+    const countryList = [
+      {n:"INDIA", f:"🇮🇳", c:"#ff9933"}, {n:"USA", f:"🇺🇸", c:"#1976d2"}, {n:"BRAZIL", f:"🇧🇷", c:"#4caf50"}, {n:"GERMANY", f:"🇩🇪", c:"#f44336"},
+      {n:"FRANCE", f:"🇫🇷", c:"#2196f3"}, {n:"UK", f:"🇬🇧", c:"#673ab7"}, {n:"JAPAN", f:"🇯🇵", c:"#e91e63"}, {n:"CANADA", f:"🇨🇦", c:"#d32f2f"},
+      {n:"ITALY", f:"🇮🇹", c:"#43a047"}, {n:"SPAIN", f:"🇪🇸", c:"#ffb300"}, {n:"ARGENTINA", f:"🇦🇷", c:"#00b0ff"}, {n:"RUSSIA", f:"🇷🇺", c:"#3f51b5"},
+      {n:"MEXICO", f:"🇲🇽", c:"#2e7d32"}, {n:"AUSTRALIA", f:"🇦🇺", c:"#1e88e5"}, {n:"TURKEY", f:"🇹🇷", c:"#d32f2f"}, {n:"INDONESIA", f:"🇮🇩", c:"#f44336"},
+      {n:"SOUTH KOREA", f:"🇰🇷", c:"#212121"}, {n:"SAUDI ARABIA", f:"🇸🇦", c:"#2e7d32"}, {n:"PAKISTAN", f:"🇵🇰", c:"#1b5e20"}, {n:"NIGERIA", f:"🇳🇬", c:"#2e7d32"},
+      {n:"BANGLADESH", f:"🇧🇩", c:"#00695c"}, {n:"VIETNAM", f:"🇻🇳", c:"#c62828"}, {n:"EGYPT", f:"🇪🇬", c:"#d84315"}, {n:"IRAN", f:"🇮🇷", c:"#2e7d32"},
+      {n:"SOUTH AFRICA", f:"🇿🇦", c:"#f57f17"}, {n:"COLOMBIA", f:"🇨🇴", c:"#fbc02d"}, {n:"UKRAINE", f:"🇺🇦", c:"#1976d2"}, {n:"POLAND", f:"🇵🇱", c:"#d32f2f"},
+      {n:"NETHERLANDS", f:"🇳🇱", c:"#e65100"}, {n:"SWEDEN", f:"🇸🇪", c:"#1565c0"}, {n:"SWITZERLAND", f:"🇨🇭", c:"#c62828"}, {n:"BELGIUM", f:"🇧🇪", c:"#fbc02d"},
+      {n:"NORWAY", f:"🇳🇴", c:"#b71c1c"}, {n:"AUSTRIA", f:"🇦🇹", c:"#c62828"}, {n:"DENMARK", f:"🇩🇰", c:"#b71c1c"}, {n:"FINLAND", f:"🇫🇮", c:"#1565c0"},
+      {n:"GREECE", f:"🇬🇷", c:"#0277bd"}, {n:"PORTUGAL", f:"🇵🇹", c:"#c62828"}, {n:"IRELAND", f:"🇮🇪", c:"#2e7d32"}, {n:"NEW ZEALAND", f:"🇳🇿", c:"#1a237e"},
+      {n:"CHILE", f:"🇨🇱", c:"#b71c1c"}, {n:"PERU", f:"🇵🇪", c:"#c62828"}, {n:"COLOMBIA", f:"🇨🇴", c:"#fbc02d"}, {n:"SINGAPORE", f:"🇸🇬", c:"#d32f2f"},
+      {n:"MALAYSIA", f:"🇲🇾", c:"#0d47a1"}, {n:"THAILAND", f:"🇹🇭", c:"#1a237e"}, {n:"PHILIPPINES", f:"🇵🇭", c:"#0d47a1"}, {n:"ISRAEL", f:"🇮🇱", c:"#0277bd"},
+      {n:"QATAR", f:"🇶🇦", c:"#880e4f"}, {n:"UAE", f:"🇦🇪", c:"#1b5e20"}, {n:"NEPAL", f:"🇳🇵", c:"#b71c1c"}, {n:"SRI LANKA", f:"🇱🇰", c:"#ff8f00"},
+      {n:"GHANA", f:"🇬🇭", c:"#fbc02d"}, {n:"KENYA", f:"🇰🇪", c:"#b71c1c"}, {n:"MOROCCO", f:"🇲🇦", c:"#b71c1c"}, {n:"CUBA", f:"🇨🇺", c:"#0d47a1"},
+      {n:"IRAQ", f:"🇮🇶", c:"#d32f2f"}, {n:"IRAN", f:"🇮🇷", c:"#1b5e20"}, {n:"ROMANIA", f:"🇷🇴", c:"#fbc02d"}, {n:"CZECH", f:"🇨🇿", c:"#0d47a1"},
+      {n:"HUNGARY", f:"🇭🇺", c:"#2e7d32"}, {n:"PORTUGAL", f:"🇵🇹", c:"#d32f2f"}, {n:"SERBIA", f:"🇷🇸", c:"#b71c1c"}, {n:"CROATIA", f:"🇭🇷", c:"#1565c0"}
     ];
 
-    const flagImages = {};
-    countries.forEach(c => {
-      const img = new Image();
-      img.src = `https://flagcdn.com/w80/${c.code}.png`;
-      flagImages[c.name] = img;
-    });
-
     let balls = [];
-    const ballRadius = 20;
+    const ballRadius = 16;
+    let totalCount = countryList.length;
 
     function spawnBalls() {
       balls.forEach(b => Composite.remove(world, b));
       balls = [];
 
-      countries.forEach((country, index) => {
-        const randX = centerX + (Math.random() * 140 - 70);
-        const randY = centerY - 140 + (Math.random() * 50);
+      countryList.forEach((country) => {
+        const randX = centerX + (Math.random() * 180 - 90);
+        const randY = centerY - 140 + (Math.random() * 60);
         const ball = Bodies.circle(randX, randY, ballRadius, {
           restitution: 0.98,
-          friction: 0.001,
-          frictionAir: 0.008,
-          density: 0.05,
-          label: country.name
+          friction: 0.0001,
+          frictionAir: 0.003,
+          density: 0.03,
+          label: country.n,
+          countryData: country
         });
         balls.push(ball);
         Composite.add(world, ball);
       });
+      document.getElementById('eliminated-count').innerText = "0";
     }
 
     spawnBalls();
@@ -180,16 +190,19 @@
 
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
-        if (b.position.y > height + 60 || b.position.x < -60 || b.position.x > width + 60) {
+        if (b.position.y > height + 50 || b.position.x < -50 || b.position.x > width + 50) {
           Composite.remove(world, b);
           balls.splice(i, 1);
+          let eliminated = totalCount - balls.length;
+          document.getElementById('eliminated-count').innerText = eliminated;
         }
       }
 
+      // Winner
       if (balls.length === 1 && !gameOver) {
         gameOver = true;
-        const winner = balls[0].label;
-        document.getElementById('winner-name').innerText = winner + " 🚩";
+        const winner = balls[0].countryData;
+        document.getElementById('winner-name').innerText = `${winner.f} ${winner.n}`;
         document.getElementById('winner-banner').style.display = 'block';
 
         setTimeout(() => {
@@ -200,11 +213,11 @@
       }
     });
 
-    // Custom Canvas Rendering for Flags & Glow
+    // Custom Canvas Render
     (function customRender() {
       ctx.clearRect(0, 0, width, height);
 
-      // Draw Walls & Obstacles
+      // Draw Walls & Spinners
       const bodies = Composite.allBodies(world);
       bodies.forEach(body => {
         if (body.circleRadius) return;
@@ -222,31 +235,23 @@
       // Draw Flag Balls
       balls.forEach(ball => {
         const { x, y } = ball.position;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(ball.angle);
+        const c = ball.countryData;
 
-        // Circular clip for flag
-        ctx.beginPath();
-        ctx.arc(0, 0, ballRadius, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-
-        const img = flagImages[ball.label];
-        if (img && img.complete) {
-          ctx.drawImage(img, -ballRadius, -ballRadius, ballRadius * 2, ballRadius * 2);
-        } else {
-          ctx.fillStyle = '#ff9800';
-          ctx.fill();
-        }
-
-        // Circular Border
-        ctx.restore();
         ctx.beginPath();
         ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = c.c;
+        ctx.fill();
+
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
+
+        ctx.save();
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.f, x, y);
+        ctx.restore();
       });
 
       requestAnimationFrame(customRender);
