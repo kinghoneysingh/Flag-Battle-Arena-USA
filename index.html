@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flag Battle Arena</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0a0a1a;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: #fff;
+    }
+    #ui-container {
+      position: absolute;
+      top: 15px;
+      width: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #ffeb3b;
+      text-shadow: 0 0 10px rgba(255,235,59,0.8);
+    }
+    p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #00e676;
+    }
+    #winner-banner {
+      display: none;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 3px solid #ffeb3b;
+      padding: 20px 30px;
+      border-radius: 12px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffeb3b;
+      z-index: 20;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui-container">
+    <h1>⚔️ FLAG WAR ARENA ⚔️</h1>
+    <p>💬 Type your country in chat to support!</p>
+  </div>
+
+  <div id="winner-banner">🏆 WINNER: <span id="winner-name"></span></div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    const { Engine, Render, Runner, Bodies, Composite, Body, Events } = Matter;
+
+    const engine = Engine.create({ gravity: { x: 0, y: 0.15 } });
+    const world = engine.world;
+
+    const render = Render.create({
+      canvas: canvas,
+      engine: engine,
+      options: {
+        width: width,
+        height: height,
+        wireframes: false,
+        background: '#0c0f1d'
+      }
+    });
+
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    // Arena Settings
+    const centerX = width / 2;
+    const centerY = height / 2 + 30;
+    const arenaRadius = Math.min(width, height) * 0.42;
+
+    // Outer Circular Boundary (Segments)
+    const wallSegments = 40;
+    for (let i = 0; i < wallSegments; i++) {
+      // Gap chhodne ke liye bottom cut
+      if (i > 18 && i < 22) continue; 
+      const angle = (i / wallSegments) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * arenaRadius;
+      const y = centerY + Math.sin(angle) * arenaRadius;
+      const wall = Bodies.rectangle(x, y, 20, 25, {
+        isStatic: true,
+        angle: angle + Math.PI / 2,
+        render: { fillStyle: '#3f51b5' }
+      });
+      Composite.add(world, wall);
+    }
+
+    // Rotating Blades / Obstacles
+    const spinner1 = Bodies.rectangle(centerX, centerY - 40, 140, 14, {
+      isStatic: true,
+      render: { fillStyle: '#e91e63' }
+    });
+    const spinner2 = Bodies.rectangle(centerX, centerY + 50, 100, 14, {
+      isStatic: true,
+      render: { fillStyle: '#00bcd4' }
+    });
+    Composite.add(world, [spinner1, spinner2]);
+
+    Events.on(engine, 'beforeUpdate', () => {
+      Body.setAngle(spinner1, spinner1.angle + 0.04);
+      Body.setAngle(spinner2, spinner2.angle - 0.05);
+    });
+
+    // Country Flags List
+    const countries = [
+      { name: "INDIA", color: "#ff9933" },
+      { name: "USA", color: "#1976d2" },
+      { name: "BRAZIL", color: "#4caf50" },
+      { name: "GERMANY", color: "#f44336" },
+      { name: "FRANCE", color: "#2196f3" },
+      { name: "JAPAN", color: "#e91e63" },
+      { name: "ARGENTINA", color: "#03a9f4" },
+      { name: "UK", color: "#9c27b0" },
+      { name: "TURKEY", color: "#d32f2f" },
+      { name: "CANADA", color: "#f44336" }
+    ];
+
+    let balls = [];
+
+    function spawnBalls() {
+      balls.forEach(b => Composite.remove(world, b));
+      balls = [];
+
+      countries.forEach((country, index) => {
+        const randX = centerX + (Math.random() * 120 - 60);
+        const randY = centerY - 120 + (Math.random() * 40);
+        const ball = Bodies.circle(randX, randY, 16, {
+          restitution: 0.9,
+          friction: 0.005,
+          density: 0.04,
+          label: country.name,
+          render: {
+            fillStyle: country.color
+          }
+        });
+        balls.push(ball);
+        Composite.add(world, ball);
+      });
+    }
+
+    spawnBalls();
+
+    // Check Falling & Elimination
+    let gameOver = false;
+    Events.on(engine, 'afterUpdate', () => {
+      if (gameOver) return;
+
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        if (b.position.y > height + 40 || b.position.x < -40 || b.position.x > width + 40) {
+          Composite.remove(world, b);
+          balls.splice(i, 1);
+        }
+      }
+
+      // Last Ball Standing = Winner
+      if (balls.length === 1 && !gameOver) {
+        gameOver = true;
+        const winner = balls[0].label;
+        document.getElementById('winner-name').innerText = winner;
+        document.getElementById('winner-banner').style.display = 'block';
+
+        // 4 Second baad agla round automatic start hoga
+        setTimeout(() => {
+          document.getElementById('winner-banner').style.display = 'none';
+          spawnBalls();
+          gameOver = false;
+        }, 4000);
+      }
+    });
+  </script>
+</body>
+</html>
