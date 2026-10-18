@@ -3,54 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Flag Battle Arena</title>
+  <title>Flag War Arena</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
-      background: #0a0a1a;
+      background: radial-gradient(circle, #101528 0%, #05070e 100%);
       overflow: hidden;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       text-align: center;
       color: #fff;
+      user-select: none;
     }
     #ui-container {
       position: absolute;
-      top: 15px;
+      top: 20px;
       width: 100%;
       pointer-events: none;
       z-index: 10;
     }
     h1 {
       margin: 0;
-      font-size: 22px;
-      color: #ffeb3b;
-      text-shadow: 0 0 10px rgba(255,235,59,0.8);
+      font-size: 24px;
+      color: #ffd700;
+      text-shadow: 0 0 15px rgba(255,215,0,0.8);
+      letter-spacing: 1px;
     }
     p {
-      margin: 5px 0;
+      margin: 6px 0;
       font-size: 14px;
-      color: #00e676;
+      color: #00ffcc;
+      font-weight: bold;
     }
     #winner-banner {
       display: none;
       position: absolute;
-      top: 40%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.85);
-      border: 3px solid #ffeb3b;
-      padding: 20px 30px;
-      border-radius: 12px;
-      font-size: 24px;
-      font-weight: bold;
-      color: #ffeb3b;
-      z-index: 20;
+      background: rgba(10, 10, 25, 0.95);
+      border: 3px solid #ffd700;
+      box-shadow: 0 0 25px rgba(255,215,0,0.6);
+      padding: 20px 35px;
+      border-radius: 16px;
+      font-size: 26px;
+      font-weight: 900;
+      color: #ffd700;
+      z-index: 30;
+      animation: pop 0.4s ease;
+    }
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0.6); }
+      100% { transform: translate(-50%, -50%) scale(1); }
     }
     canvas {
       display: block;
-      margin: 0 auto;
     }
   </style>
 </head>
@@ -58,108 +67,105 @@
 
   <div id="ui-container">
     <h1>⚔️ FLAG WAR ARENA ⚔️</h1>
-    <p>💬 Type your country in chat to support!</p>
+    <p>💬 Type your country name in chat to win!</p>
   </div>
 
-  <div id="winner-banner">🏆 WINNER: <span id="winner-name"></span></div>
+  <div id="winner-banner">
+    🏆 WINNER 🏆<br>
+    <span id="winner-name" style="color: #fff; font-size: 28px;"></span>
+  </div>
 
   <canvas id="gameCanvas"></canvas>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
     const width = window.innerWidth;
     const height = window.innerHeight;
     canvas.width = width;
     canvas.height = height;
 
-    const { Engine, Render, Runner, Bodies, Composite, Body, Events } = Matter;
+    const { Engine, Runner, Bodies, Composite, Body, Events } = Matter;
 
-    const engine = Engine.create({ gravity: { x: 0, y: 0.15 } });
+    const engine = Engine.create({ gravity: { x: 0, y: 0.35 } });
     const world = engine.world;
-
-    const render = Render.create({
-      canvas: canvas,
-      engine: engine,
-      options: {
-        width: width,
-        height: height,
-        wireframes: false,
-        background: '#0c0f1d'
-      }
-    });
-
-    Render.run(render);
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    // Arena Settings
     const centerX = width / 2;
-    const centerY = height / 2 + 30;
-    const arenaRadius = Math.min(width, height) * 0.42;
+    const centerY = height / 2 + 20;
+    const arenaRadius = Math.min(width, height) * 0.43;
 
-    // Outer Circular Boundary (Segments)
-    const wallSegments = 40;
+    // Outer Circle with an exit gap on left
+    const wallSegments = 48;
     for (let i = 0; i < wallSegments; i++) {
-      // Gap chhodne ke liye bottom cut
-      if (i > 18 && i < 22) continue; 
+      if (i >= 22 && i <= 26) continue; // Elimination Exit Hole
       const angle = (i / wallSegments) * Math.PI * 2;
       const x = centerX + Math.cos(angle) * arenaRadius;
       const y = centerY + Math.sin(angle) * arenaRadius;
-      const wall = Bodies.rectangle(x, y, 20, 25, {
+      const wall = Bodies.rectangle(x, y, 22, 28, {
         isStatic: true,
         angle: angle + Math.PI / 2,
-        render: { fillStyle: '#3f51b5' }
+        render: { fillStyle: '#3d4b8f' }
       });
       Composite.add(world, wall);
     }
 
-    // Rotating Blades / Obstacles
-    const spinner1 = Bodies.rectangle(centerX, centerY - 40, 140, 14, {
+    // Rotating Blades / Spinners
+    const spinner1 = Bodies.rectangle(centerX, centerY - 60, arenaRadius * 0.7, 14, {
       isStatic: true,
-      render: { fillStyle: '#e91e63' }
+      render: { fillStyle: '#ff2d55' }
     });
-    const spinner2 = Bodies.rectangle(centerX, centerY + 50, 100, 14, {
+    const spinner2 = Bodies.rectangle(centerX, centerY + 50, arenaRadius * 0.55, 14, {
       isStatic: true,
-      render: { fillStyle: '#00bcd4' }
+      render: { fillStyle: '#00d2d3' }
     });
     Composite.add(world, [spinner1, spinner2]);
 
     Events.on(engine, 'beforeUpdate', () => {
-      Body.setAngle(spinner1, spinner1.angle + 0.04);
-      Body.setAngle(spinner2, spinner2.angle - 0.05);
+      Body.setAngle(spinner1, spinner1.angle + 0.045);
+      Body.setAngle(spinner2, spinner2.angle - 0.055);
     });
 
-    // Country Flags List
+    // Country flags list with official CDN flag icons
     const countries = [
-      { name: "INDIA", color: "#ff9933" },
-      { name: "USA", color: "#1976d2" },
-      { name: "BRAZIL", color: "#4caf50" },
-      { name: "GERMANY", color: "#f44336" },
-      { name: "FRANCE", color: "#2196f3" },
-      { name: "JAPAN", color: "#e91e63" },
-      { name: "ARGENTINA", color: "#03a9f4" },
-      { name: "UK", color: "#9c27b0" },
-      { name: "TURKEY", color: "#d32f2f" },
-      { name: "CANADA", color: "#f44336" }
+      { name: "INDIA", code: "in" },
+      { name: "USA", code: "us" },
+      { name: "BRAZIL", code: "br" },
+      { name: "GERMANY", code: "de" },
+      { name: "FRANCE", code: "fr" },
+      { name: "ARGENTINA", code: "ar" },
+      { name: "JAPAN", code: "jp" },
+      { name: "TURKEY", code: "tr" },
+      { name: "UK", code: "gb" },
+      { name: "PORTUGAL", code: "pt" },
+      { name: "INDONESIA", code: "id" },
+      { name: "CANADA", code: "ca" }
     ];
 
+    const flagImages = {};
+    countries.forEach(c => {
+      const img = new Image();
+      img.src = `https://flagcdn.com/w80/${c.code}.png`;
+      flagImages[c.name] = img;
+    });
+
     let balls = [];
+    const ballRadius = 20;
 
     function spawnBalls() {
       balls.forEach(b => Composite.remove(world, b));
       balls = [];
 
       countries.forEach((country, index) => {
-        const randX = centerX + (Math.random() * 120 - 60);
-        const randY = centerY - 120 + (Math.random() * 40);
-        const ball = Bodies.circle(randX, randY, 16, {
-          restitution: 0.9,
-          friction: 0.005,
-          density: 0.04,
-          label: country.name,
-          render: {
-            fillStyle: country.color
-          }
+        const randX = centerX + (Math.random() * 140 - 70);
+        const randY = centerY - 140 + (Math.random() * 50);
+        const ball = Bodies.circle(randX, randY, ballRadius, {
+          restitution: 0.98,
+          friction: 0.001,
+          frictionAir: 0.008,
+          density: 0.05,
+          label: country.name
         });
         balls.push(ball);
         Composite.add(world, ball);
@@ -168,27 +174,24 @@
 
     spawnBalls();
 
-    // Check Falling & Elimination
     let gameOver = false;
     Events.on(engine, 'afterUpdate', () => {
       if (gameOver) return;
 
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
-        if (b.position.y > height + 40 || b.position.x < -40 || b.position.x > width + 40) {
+        if (b.position.y > height + 60 || b.position.x < -60 || b.position.x > width + 60) {
           Composite.remove(world, b);
           balls.splice(i, 1);
         }
       }
 
-      // Last Ball Standing = Winner
       if (balls.length === 1 && !gameOver) {
         gameOver = true;
         const winner = balls[0].label;
-        document.getElementById('winner-name').innerText = winner;
+        document.getElementById('winner-name').innerText = winner + " 🚩";
         document.getElementById('winner-banner').style.display = 'block';
 
-        // 4 Second baad agla round automatic start hoga
         setTimeout(() => {
           document.getElementById('winner-banner').style.display = 'none';
           spawnBalls();
@@ -196,6 +199,58 @@
         }, 4000);
       }
     });
+
+    // Custom Canvas Rendering for Flags & Glow
+    (function customRender() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw Walls & Obstacles
+      const bodies = Composite.allBodies(world);
+      bodies.forEach(body => {
+        if (body.circleRadius) return;
+        ctx.beginPath();
+        const vertices = body.vertices;
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let j = 1; j < vertices.length; j++) {
+          ctx.lineTo(vertices[j].x, vertices[j].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = body.render.fillStyle || '#3f51b5';
+        ctx.fill();
+      });
+
+      // Draw Flag Balls
+      balls.forEach(ball => {
+        const { x, y } = ball.position;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(ball.angle);
+
+        // Circular clip for flag
+        ctx.beginPath();
+        ctx.arc(0, 0, ballRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const img = flagImages[ball.label];
+        if (img && img.complete) {
+          ctx.drawImage(img, -ballRadius, -ballRadius, ballRadius * 2, ballRadius * 2);
+        } else {
+          ctx.fillStyle = '#ff9800';
+          ctx.fill();
+        }
+
+        // Circular Border
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(customRender);
+    })();
   </script>
 </body>
 </html>
